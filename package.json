@@ -1,0 +1,47 @@
+{
+  "name": "hubot-gitlab-deploy",
+  "description": "gitlab deploy",
+  "version": "0.0.0",
+  "author": "thinkeridea <thinkeridea@sina.com>",
+  "license": "MIT",
+
+  "keywords": "gitlab, deploy",
+
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:thinkeridea/hubot-gitlab-deploy.git"
+  },
+
+  "bugs": {
+    "url": "https://github.com/thinkeridea/hubot-gitlab-deploy/issues"
+  },
+
+  "dependencies": {
+  },
+
+  "peerDependencies": {
+    "hubot": "2.x"
+  },
+
+  "devDependencies": {
+    "hubot-test-helper": "^1.3.0",
+    "chai": "^2.1.1",
+    "coffee-script": "1.6.3",
+    "grunt": "^0.4.5",
+    "grunt-cli": "^0.1.13",
+    "grunt-contrib-watch": "~0.6.1",
+    "grunt-mocha-test": "~0.12.7",
+    "grunt-release": "~0.11.0",
+    "hubot": "2.x",
+    "matchdep": "~0.3.0",
+    "mocha": "^2.1.0",
+    "sinon": "^1.13.0",
+    "sinon-chai": "^2.7.0"
+  },
+
+  "main": "index.coffee",
+
+  "scripts": {
+    "test": "grunt test"
+  }
+}
