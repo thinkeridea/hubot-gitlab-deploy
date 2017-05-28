@@ -4,25 +4,21 @@
   "version": "0.0.1",
   "author": "thinkeridea <thinkeridea@sina.com>",
   "license": "MIT",
-
   "keywords": "gitlab, deploy",
-
   "repository": {
     "type": "git",
     "url": "git@github.com:thinkeridea/hubot-gitlab-deploy.git"
   },
-
   "bugs": {
     "url": "https://github.com/thinkeridea/hubot-gitlab-deploy/issues"
   },
-
   "dependencies": {
+    "inflection": "^1.12.0",
+    "node.extend": "^2.0.0"
   },
-
   "peerDependencies": {
     "hubot": "2.x"
   },
-
   "devDependencies": {
     "hubot-test-helper": "^1.3.0",
     "chai": "^2.1.1",
@@ -38,9 +34,7 @@
     "sinon": "^1.13.0",
     "sinon-chai": "^2.7.0"
   },
-
   "main": "index.coffee",
-
   "scripts": {
     "test": "grunt test"
   }
