@@ -20,6 +20,7 @@ GitLabApi = require "../gitlab/api"
 Deployment = require "../models/deployment"
 Patterns = require "../models/patterns"
 Git = require "../models/git"
+Provider = require "../models/provider"
 
 DeployPrefix = Patterns.DeployPrefix
 DeployPattern = Patterns.DeployPattern
@@ -92,7 +93,22 @@ module.exports = (robot) ->
           throw error
         return deferred.promise
       ).then(() ->
-        msg.reply workingDirectory
+        deferred = Q.defer()
+
+        try
+          Provider(deployment, workingDirectory).then((result) ->
+            msg.reply JSON.stringify(result)
+            deferred.resolve()
+          ).catch((result) ->
+            msg.reply "err"+JSON.stringify(result)
+            throw error
+          )
+        catch error
+          console.log(error)
+          msg.reply "Executing deploy script failure. #{error}"
+          throw error
+
+        return deferred.promise
       )
     catch err
       robot.logger.info "Create a deployment abnormal: #{err}"
