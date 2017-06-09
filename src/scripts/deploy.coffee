@@ -41,6 +41,8 @@ module.exports = (robot) ->
     hosts = (msg.match[6] || '')
 
     workingDirectory = ""
+    stdout = ""
+    stderr = ""
 
     try
       deployment = new Deployment(name, ref, task, env, force, hosts)
@@ -73,42 +75,65 @@ module.exports = (robot) ->
           throw error
         )
       ).then((info) ->
+
         deferred = Q.defer()
         try
           childProcess.execSync("mkdir -p /tmp/#{info.path_with_namespace}/")
           workingDirectory = fs.mkdtempSync("/tmp/#{info.path_with_namespace}/")
 
-          msg.reply "deploying [#{info.path_with_namespace}](#{info.web_url}) to #{env}" + (if hosts? && hosts isnt "" then "/#{hosts}" else "")
+          msg.reply "deploying [#{info.path_with_namespace}:#{ref}](#{info.web_url}) to #{env}" + (if hosts? && hosts isnt "" then "/#{hosts}" else "")
 
           new Git().clone(workingDirectory, info.ssh_url_to_repo, ref, task).then((result) ->
-            msg.reply JSON.stringify(result)
+            stdout += result.stdout
+            stderr += result.stderr
             deferred.resolve()
           ).catch((result) ->
-            msg.reply "err"+JSON.stringify(result)
-            throw error
+            if "cmd" of result.error
+              stderr += "command: #{result.error.cmd}\n"
+            stdout += result.stdout
+            stderr += result.stderr
+            deferred.reject()
           )
         catch error
-          msg.reply "clone project [#{info.path_with_namespace}](#{info.web_url}) failure."
-          robot.logger.error ("clone project #{info.path_with_namespace} failure. #{error}")
-          throw error
+          stderr += "clone project #{info.path_with_namespace} failure.\n"
+          if "message" of error
+            stderr += "#{error.message}\n"
+
+          if "stack" of error
+            stderr += "#{error.stack}\n"
+          robot.logger.error ("clone project #{info.path_with_namespace} failure. #{error["message"]}\n#{error["stack"]}")
+          deferred.reject()
+
         return deferred.promise
       ).then(() ->
-        deferred = Q.defer()
 
+        deferred = Q.defer()
         try
           Provider(deployment, workingDirectory).then((result) ->
-            msg.reply JSON.stringify(result)
+            stdout += result.stdout
+            stderr += result.stderr
             deferred.resolve()
           ).catch((result) ->
-            msg.reply "err"+JSON.stringify(result)
-            throw error
+            if "cmd" of result.error
+              stderr += "command: #{result.error.cmd}\n"
+            stdout += result.stdout
+            stderr += result.stderr
+            deferred.reject()
           )
         catch error
-          console.log(error)
-          msg.reply "Executing deploy script failure. #{error}"
-          throw error
+          stderr += "Executing deploy script failure."
+          if "message" of error
+            stderr += "#{error.message}\n"
+
+          if "stack" of error
+            stderr += "#{error.stack}\n"
+          robot.logger.error ("Executing deploy script failure. #{error["message"]}\n#{error["stack"]}")
+          deferred.reject()
 
         return deferred.promise
+      ).catch(()->
+        msg.reply "stdout:#{stdout}"
+        msg.reply "stderr:#{stderr}"
       )
     catch err
       robot.logger.info "Create a deployment abnormal: #{err}"
