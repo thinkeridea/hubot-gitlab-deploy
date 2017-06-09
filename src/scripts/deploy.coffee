@@ -44,6 +44,7 @@ module.exports = (robot) ->
     commitID = ref
     stdout = ""
     stderr = ""
+    deployLockKey = "gitlab_deploy_lock_#{name}"
 
     try
       deployment = new Deployment(name, ref, task, env, force, hosts)
@@ -63,21 +64,27 @@ module.exports = (robot) ->
         msg.reply "#{name} you are not allowed to deployment."
         return
 
+      deployStatus = robot.brain.get deployLockKey
+      if deployStatus? && deployStatus!=""
+        msg.reply "#{name} #{deployStatus.user} Already deploying."
+        return
+
+      robot.brain.set(deployLockKey, {user:msg.message.user.name})
+
       api = new GitLabApi(deployment.application, deployment)
 
       # check project status
       api.projectStatus().catch((error) ->
         msg.reply error
-        throw error
+        robot.brain.remove(deployLockKey)
       ).then((sha)->
         # get project info
         commitID = sha
         api.projectInfo().catch((error) ->
           msg.reply error
-          throw error
+          robot.brain.remove(deployLockKey)
         )
       ).then((info) ->
-
         deferred = Q.defer()
         try
           childProcess.execSync("mkdir -p /tmp/#{info.path_with_namespace}/")
@@ -108,7 +115,6 @@ module.exports = (robot) ->
 
         return deferred.promise
       ).then(() ->
-
         deferred = Q.defer()
         try
           Provider(deployment, workingDirectory).then((result) ->
@@ -133,12 +139,18 @@ module.exports = (robot) ->
           deferred.reject()
 
         return deferred.promise
+      ).then(()->
+        deferred = Q.defer()
+        robot.brain.remove(deployLockKey)
+        return deferred.promise
       ).catch(()->
+        robot.brain.remove(deployLockKey)
         msg.reply "stdout:#{stdout}"
         msg.reply "stderr:#{stderr}"
       )
-    catch err
-      robot.logger.info "Create a deployment abnormal: #{err}"
+    catch error
+      robot.brain.remove(deployLockKey)
+      robot.logger.info "Create a deployment abnormal: #{error["message"]}\n#{error["stack"]}"
 
   robot.hear /orly/, (res) ->
     res.send "yarly"
