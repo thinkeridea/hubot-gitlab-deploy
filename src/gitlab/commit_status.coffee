@@ -23,7 +23,7 @@ class CommitStatus
       if (typeof response !="undefined" && response? && response.statusCode == 200)
         info = JSON.parse(body)
         if (info && info.status == "success")
-          deferred.resolve(true)
+          deferred.resolve(info.id)
         else
           deferred.reject("""
           Unmet required commit status contexts for #{@api.deployment.name}: #{info.status}.

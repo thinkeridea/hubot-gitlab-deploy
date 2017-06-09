@@ -41,6 +41,7 @@ module.exports = (robot) ->
     hosts = (msg.match[6] || '')
 
     workingDirectory = ""
+    commitID = ref
     stdout = ""
     stderr = ""
 
@@ -68,8 +69,9 @@ module.exports = (robot) ->
       api.projectStatus().catch((error) ->
         msg.reply error
         throw error
-      ).then(()->
+      ).then((sha)->
         # get project info
+        commitID = sha
         api.projectInfo().catch((error) ->
           msg.reply error
           throw error
@@ -83,7 +85,7 @@ module.exports = (robot) ->
 
           msg.reply "deploying [#{info.path_with_namespace}:#{ref}](#{info.web_url}) to #{env}" + (if hosts? && hosts isnt "" then "/#{hosts}" else "")
 
-          new Git().clone(workingDirectory, info.ssh_url_to_repo, ref, task).then((result) ->
+          new Git().clone(workingDirectory, info.ssh_url_to_repo, commitID, task).then((result) ->
             stdout += result.stdout
             stderr += result.stderr
             deferred.resolve()
