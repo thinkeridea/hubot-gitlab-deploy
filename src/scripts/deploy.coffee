@@ -4,7 +4,7 @@
 # Configuration:
 #   GITLAB_URL
 #   GITLAB_TOKEN
-#   GITLAB_SNIPPETS_NAMME
+#   GITLAB_SNIPPETS_NAME
 #
 # Commands:
 #   hubot where can I deploy <app> - see what environments you can deploy app
@@ -21,6 +21,7 @@ Deployment = require "../models/deployment"
 Patterns = require "../models/patterns"
 Git = require "../models/git"
 Provider = require "../models/provider"
+DeployLog = require "../models/deploy_log"
 
 DeployPrefix = Patterns.DeployPrefix
 DeployPattern = Patterns.DeployPattern
@@ -45,6 +46,8 @@ module.exports = (robot) ->
     stdout = ""
     stderr = ""
     deployLockKey = "gitlab_deploy_lock_#{name}"
+    command = "deploy#{msg.match[2]||""} #{name}:#{ref} to #{env}" + (if hosts? && hosts isnt "" then "/#{hosts}" else "")
+    projectInfo = {}
 
     try
       deployment = new Deployment(name, ref, task, env, force, hosts)
@@ -72,6 +75,46 @@ module.exports = (robot) ->
       robot.brain.set(deployLockKey, {user:msg.message.user.name})
 
       api = new GitLabApi(deployment.application, deployment)
+      deployLog = new DeployLog(name, deployment.application.repository, msg.message.user.room, msg.message.user.name, ref, env, command)
+
+      sendMsg = (content, status) ->
+        switch robot.adapterName
+          when "rocketchat"
+            robot.adapter.getRoomId(msg.message.user.room).then((rid)->
+              robot.adapter.customMessage({
+                channel: rid,
+                alias: "",
+                avatar: "",
+                attachments: [{
+                  text:content,
+                  color:if status then "#6498CC" else "#c00",
+                }]
+              })
+            ).catch(()->
+              msg.reply content
+            )
+          else
+            msg.reply content
+
+      completeDeploy = (status) ->
+        robot.brain.remove(deployLockKey)
+        try
+          message = "#{msg.message.user.name}'s #{name} deployment of [#{projectInfo.path_with_namespace}:#{ref}](#{projectInfo.web_url}/tree/#{ref}) is #{if status then "done!" else "failed."}"
+          api.writeDeployLog(command, stdout, stderr).then((info)->
+            deployLog.record(commitID, info.id, info.web_url, stdout, stderr, status).catch((error)->
+              robot.logger.error("mongodb record deploy log failure. #{error}")
+            )
+            sendMsg("[##{info.id}](#{info.web_url}): #{message}", status)
+          ).catch((error)->
+            deployLog.record(commitID, -1, "", stdout, stderr, status).catch((error)->
+              robot.logger.error("mongodb record deploy log failure. #{error}")
+            )
+            sendMsg("#{message}", status)
+            robot.logger.error("writeDeployLog: #{error}")
+          )
+        catch error
+          sendMsg("#{message}", status)
+          robot.logger.error("writeDeployLog: #{error["message"]}\n#{error["stack"]}")
 
       # check project status
       api.projectStatus().catch((error) ->
@@ -86,6 +129,7 @@ module.exports = (robot) ->
         )
       ).then((info) ->
         deferred = Q.defer()
+        projectInfo = info
         try
           childProcess.execSync("mkdir -p /tmp/#{info.path_with_namespace}/")
           workingDirectory = fs.mkdtempSync("/tmp/#{info.path_with_namespace}/")
@@ -140,13 +184,9 @@ module.exports = (robot) ->
 
         return deferred.promise
       ).then(()->
-        deferred = Q.defer()
-        robot.brain.remove(deployLockKey)
-        return deferred.promise
+        completeDeploy(true)
       ).catch(()->
-        robot.brain.remove(deployLockKey)
-        msg.reply "stdout:#{stdout}"
-        msg.reply "stderr:#{stderr}"
+        completeDeploy(false)
       )
     catch error
       robot.brain.remove(deployLockKey)
