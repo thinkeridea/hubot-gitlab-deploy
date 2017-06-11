@@ -52,4 +52,14 @@ class DeployLog
 
     return deferred.promise
 
+  lastDeploySha: (@projectName) ->
+    deferred = Q.defer()
+    deployLogModel.findOne({status: true}).sort("-create_date").exec((err, res)->
+      if err? && err != ""
+        deferred.reject(err)
+      else
+        deferred.resolve(if res? && "sha" of res then res.sha else "0000000")
+    )
+    return deferred.promise
+
 module.exports = DeployLog
