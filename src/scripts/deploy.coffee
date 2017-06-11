@@ -117,26 +117,50 @@ module.exports = (robot) ->
           robot.logger.error("writeDeployLog: #{error["message"]}\n#{error["stack"]}")
 
       # check project status
-      api.projectStatus().catch((error) ->
-        msg.reply error
-        robot.brain.remove(deployLockKey)
-      ).then((sha)->
-        # get project info
-        commitID = sha
-        api.projectInfo().catch((error) ->
+      Q().then(()->
+        deferred = Q.defer()
+        api.projectStatus().then((sha) ->
+          commitID = sha
+          deferred.resolve()
+        ).catch((error) ->
           msg.reply error
           robot.brain.remove(deployLockKey)
         )
-      ).then((info) ->
+        return deferred.promise
+      ).then(()->
         deferred = Q.defer()
-        projectInfo = info
+        # get project info
+        api.projectInfo().then((info) ->
+          projectInfo = info
+          deferred.resolve()
+        ).catch((error) ->
+          msg.reply error
+          robot.brain.remove(deployLockKey)
+          throw error
+        )
+        return deferred.promise
+      ).then(() ->
+        deferred = Q.defer()
+        deployLog.lastDeploySha(deployment.repository).then((sha) ->
+          deferred.resolve(sha)
+        ).catch((error) ->
+          robot.logger.error("get last deploy sha failure. #{error}")
+          deferred.resolve("0000000")
+        )
+        return deferred.promise
+      ).then((lastSha) ->
+        deferred = Q.defer()
+        message = "deploying [#{projectInfo.path_with_namespace}:#{ref}](#{projectInfo.web_url}/tree/#{ref}) to #{env}" + (if hosts? && hosts isnt "" then "/#{hosts}" else "")
+        msg.reply "#{message} ([compare](#{projectInfo.web_url}/compare/#{lastSha}...#{commitID}))"
+        deferred.resolve()
+        return deferred.promise
+      ).then(() ->
+        deferred = Q.defer()
+
         try
-          childProcess.execSync("mkdir -p /tmp/#{info.path_with_namespace}/")
-          workingDirectory = fs.mkdtempSync("/tmp/#{info.path_with_namespace}/")
-
-          msg.reply "deploying [#{info.path_with_namespace}:#{ref}](#{info.web_url}) to #{env}" + (if hosts? && hosts isnt "" then "/#{hosts}" else "")
-
-          new Git().clone(workingDirectory, info.ssh_url_to_repo, commitID, task).then((result) ->
+          childProcess.execSync("mkdir -p /tmp/#{projectInfo.path_with_namespace}/")
+          workingDirectory = fs.mkdtempSync("/tmp/#{projectInfo.path_with_namespace}/")
+          new Git().clone(workingDirectory, projectInfo.ssh_url_to_repo, commitID, task).then((result) ->
             stdout += result.stdout
             stderr += result.stderr
             deferred.resolve()
@@ -148,13 +172,13 @@ module.exports = (robot) ->
             deferred.reject()
           )
         catch error
-          stderr += "clone project #{info.path_with_namespace} failure.\n"
+          stderr += "clone project #{projectInfo.path_with_namespace} failure.\n"
           if "message" of error
             stderr += "#{error.message}\n"
 
           if "stack" of error
             stderr += "#{error.stack}\n"
-          robot.logger.error ("clone project #{info.path_with_namespace} failure. #{error["message"]}\n#{error["stack"]}")
+          robot.logger.error ("clone project #{projectInfo.path_with_namespace} failure. #{error["message"]}\n#{error["stack"]}")
           deferred.reject()
 
         return deferred.promise
