@@ -80,19 +80,15 @@ module.exports = (robot) ->
       sendMsg = (content, status) ->
         switch robot.adapterName
           when "rocketchat"
-            robot.adapter.getRoomId(msg.message.user.room).then((rid)->
-              robot.adapter.customMessage({
-                channel: rid,
-                alias: "",
-                avatar: "",
-                attachments: [{
-                  text:content,
-                  color:if status then "#6498CC" else "#c00",
-                }]
-              })
-            ).catch(()->
-              msg.reply content
-            )
+            robot.adapter.customMessage({
+              channel: msg.message.user.roomID,
+              alias: "",
+              avatar: "",
+              attachments: [{
+                text:content,
+                color:if status then "#6498CC" else "#c00",
+              }]
+            })
           else
             msg.reply content
 
