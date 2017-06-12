@@ -22,12 +22,10 @@ class CommitStatus
 
       if (typeof response !="undefined" && response? && response.statusCode == 200)
         info = JSON.parse(body)
-        if (info && info.status == "success")
-          deferred.resolve(info.id)
+        if not info?
+          deferred.reject("check project status failed: didn't get to the project state information")
         else
-          deferred.reject("""
-          Unmet required commit status contexts for #{@api.deployment.name}: #{info.status}.
-          """)
+          deferred.resolve(info)
       else if (typeof response !="undefined" && response? && response.statusCode == 401)
         deferred.reject("Unable to create deployment for #{@api.application['repository']}. Check your scopes for this token.")
       else

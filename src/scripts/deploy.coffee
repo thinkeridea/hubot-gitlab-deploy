@@ -115,9 +115,13 @@ module.exports = (robot) ->
       # check project status
       Q().then(()->
         deferred = Q.defer()
-        api.projectStatus().then((sha) ->
-          commitID = sha
-          deferred.resolve()
+        api.projectStatus().then((info) ->
+          if info.status == "success" || info.status is null || force
+            commitID = info.id
+            deferred.resolve()
+          else
+            msg.reply "Unmet required commit status contexts for #{name}: continuous-integration/gitlab-ci/push #{info.status}."
+            robot.brain.remove(deployLockKey)
         ).catch((error) ->
           msg.reply error
           robot.brain.remove(deployLockKey)
