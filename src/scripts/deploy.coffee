@@ -7,7 +7,7 @@
 #   GITLAB_SNIPPETS_NAME
 #
 # Commands:
-#   hubot where can I deploy <app> - see what environments you can deploy app
+#   hubot show deploy apps <app> - see what environments you can deploy app
 #   hubot deploy:version - show the script version and node/environment info
 #   hubot deploy <app>/<branch> to <env>/<roles> - deploys <app>'s <branch> to the <env> environment's <roles> servers
 #   hubot deploys <app>/<branch> in <env> - Displays recent deployments for <app>'s <branch> in the <env> environment
@@ -18,20 +18,22 @@ childProcess = require('child_process')
 
 GitLabApi = require "../gitlab/api"
 Deployment = require "../models/deployment"
+Applications = require "../models/applications"
 Patterns = require "../models/patterns"
 Git = require "../models/git"
 Provider = require "../models/provider"
 DeployLog = require "../models/deploy_log"
+Formatters = require("../models/formatters")
 
 DeployPrefix = Patterns.DeployPrefix
 DeployPattern = Patterns.DeployPattern
 DeploysPattern = Patterns.DeploysPattern
 
 module.exports = (robot) ->
-###########################################################################
-# deploy hubot/topic-branch to staging
-#
-# deploys <app>'s <branch> to the <env> environment's <roles> servers
+  ###########################################################################
+  # deploy hubot/topic-branch to staging
+  #
+  # deploys <app>'s <branch> to the <env> environment's <roles> servers
   robot.respond DeployPattern, id: "hubot-gitlab-deploy.create", hubotDeployAuthenticate: true, (msg) ->
     defaultDeployEnvironment = process.env.HUBOT_DEPLOY_DEFAULT_ENVIRONMENT || 'production'
     task = msg.match[1].replace("#{DeployPrefix}:", "")
@@ -216,5 +218,20 @@ module.exports = (robot) ->
       robot.brain.remove(deployLockKey)
       robot.logger.info "Create a deployment abnormal: #{error["message"]}\n#{error["stack"]}"
 
-  robot.hear /orly/, (res) ->
-    res.send "yarly"
+  ###########################################################################
+  # show deploy apps <app>
+  #
+  # Displays the available environments for an application
+  robot.respond ///show\s+#{DeployPrefix}\s+apps(?:(\s+[-_\.0-9a-z]+)?)///i, id: "hubot-gitlab-deploy.wcid", (msg) ->
+    name = msg.match[1]
+
+    try
+      if name?
+        deployment = new Deployment(name)
+        formatter  = new Formatters.WhereAppFormatter(deployment)
+      else
+        formatter  = new Formatters.WhereAppsFormatter(Applications)
+
+      msg.reply formatter.message()
+    catch err
+      robot.logger.info "Exploded looking for deployment locations: #{err}"
