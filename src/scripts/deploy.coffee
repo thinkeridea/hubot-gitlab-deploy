@@ -226,8 +226,14 @@ module.exports = (robot) ->
     name = msg.match[1]
 
     try
+
       if name?
         deployment = new Deployment(name)
+
+        unless deployment.isValidApp()
+          msg.reply "#{name}? Never heard of it."
+          return
+
         formatter  = new Formatters.WhereAppFormatter(deployment)
       else
         formatter  = new Formatters.WhereAppsFormatter(Applications)
