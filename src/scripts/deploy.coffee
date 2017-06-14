@@ -222,7 +222,7 @@ module.exports = (robot) ->
   # show deploy apps <app>
   #
   # Displays the available environments for an application
-  robot.respond ///show\s+#{DeployPrefix}\s+apps(?:(\s+[-_\.0-9a-z]+)?)///i, id: "hubot-gitlab-deploy.wcid", (msg) ->
+  robot.respond ///show\s+#{DeployPrefix}\s+apps(?:\s+([-_\.0-9a-z]+)?)?///i, id: "hubot-gitlab-deploy.wcid", (msg) ->
     name = msg.match[1]
 
     try
