@@ -241,3 +241,46 @@ module.exports = (robot) ->
       msg.reply formatter.message()
     catch err
       robot.logger.info "Exploded looking for deployment locations: #{err}"
+
+  ###########################################################################
+  # show deploy logs <app> in <env> <limit>
+  #
+  # Displays the recent deployments for an application in an environment
+  robot.respond DeploysPattern, id: "hubot-gitlab-deploy.recent", hubotDeployAuthenticate: true, (msg) ->
+    name = msg.match[1]
+    ref = msg.match[2]
+    env = msg.match[3]
+    limit = parseInt(msg.match[4]) || 10
+
+    try
+      deployment = new Deployment(name, ref, null, env)
+      deployLog = new DeployLog()
+
+      prefix = "Recent  Deployments for #{name}#{if ref? then "/#{ref}" else ""} #{if env? then "in #{env}" else ""}"
+      deployLog.latelyDeployLog(deployment, limit).then((res) ->
+        if res? && res.length <=0
+          msg.reply "#{prefix} no deployment record."
+          return
+
+        step = 10
+        if res.length > step + step/2
+          prefix += "{suffix}"
+
+        length = res.length-1
+        for i in [0..length] by step
+          c = length - (i+step)
+          if c <=0 || c < step/2
+            formatter  = new Formatters.LatestFormatter(res[i..length])
+            message = prefix.replace("{suffix}", "of #{i+1}...#{res.length}") + formatter.message()
+            msg.reply message
+            break;
+          else
+            formatter  = new Formatters.LatestFormatter(res.slice(i, i+step))
+            message = prefix.replace("{suffix}", "of #{i+1}...#{i+step}") + formatter.message()
+            msg.reply message
+      ).catch((error)->
+        robot.logger.error error
+      )
+    catch err
+      robot.logger.error "show deploy logs: #{err}"
+
