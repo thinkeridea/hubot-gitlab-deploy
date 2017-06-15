@@ -1,7 +1,7 @@
 {
   "name": "hubot-gitlab-deploy",
   "description": "gitlab deploy",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "author": "thinkeridea <thinkeridea@sina.com>",
   "license": "MIT",
   "keywords": "gitlab, deploy",
