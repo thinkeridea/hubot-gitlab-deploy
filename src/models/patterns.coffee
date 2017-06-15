@@ -17,14 +17,14 @@ DEPLOY_SYNTAX = ///
 
 
 # /deploys logs
-inflectedScriptPrefix = Inflection.pluralize(scriptPrefix)
 DEPLOYS_SYNTAX = ///
-  (#{inflectedScriptPrefix} show logs)      # / prefix
+  show\s+#{scriptPrefix}\s+logs     # / prefix
   \s+                             # hwhitespace
   #{validSlug}                    # application name, from apps.json
   (?:\/([^\s]+))?                 # Branch or sha to deploy
   (?:\s+(?:to|in|on)\s+           # http://i.imgur.com/3KqMoRi.gif
   #{validSlug})?                  # Environment to release to
+  (?:\s+([0-9]+))?                # According to log the number
 ///i
 
 exports.DeployPrefix   = scriptPrefix
