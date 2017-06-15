@@ -24,6 +24,7 @@ Git = require "../models/git"
 Provider = require "../models/provider"
 DeployLog = require "../models/deploy_log"
 Formatters = require("../models/formatters")
+Version      = require("../version").Version
 
 DeployPrefix = Patterns.DeployPrefix
 DeployPattern = Patterns.DeployPattern
@@ -284,3 +285,9 @@ module.exports = (robot) ->
     catch err
       robot.logger.error "show deploy logs: #{err}"
 
+  ###########################################################################
+  # deploy:version
+  #
+  # Useful for debugging
+  robot.respond ///#{DeployPrefix}\:version$///i, id: "hubot-gitlab-deploy.version", (msg) ->
+    msg.send "hubot-gitlab-deploy: v#{Version} hubot: v#{robot.version} node: #{process.version}"
