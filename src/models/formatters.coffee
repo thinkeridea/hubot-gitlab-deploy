@@ -1,4 +1,6 @@
 Sprintf = require("sprintf").sprintf
+Timeago = require("timeago")
+TimeStamp = require("time-stamp")
 
 splitLine = "-".repeat(100)+"\n"
 class WhereAppFormatter
@@ -30,7 +32,24 @@ class WhereAppsFormatter
       output += Sprintf "%-10s | %-25s | %-25s| %-25s\n", name, allowed_rooms, allowed_users, environments
       output += splitLine
 
-    "show applications\n```\n#{output}\n```"
+    "show applications\n```#{output}```"
+
+class LatestFormatter
+  constructor: (@res) ->
+  message: ->
+    output = Sprintf "%-5s | %-10s | %-35s | %-10s| %-25s\n", "ID", "Who", "What", "Status", "When"
+    output += splitLine
+    for log in @res
+      output += Sprintf("%-5s | %-10s | %-35s | %-10s| %-25s\n",
+        log.id,
+        log.executor,
+        "#{log.ref}(#{log.sha.substr(0, 7)}) to #{log.env}",
+        "#{if log.status then "succeed" else "failure"}",
+        "#{Timeago(log.create_date)} / #{TimeStamp("YYYY-MM-DD HH:mm:ss", log.create_date)}")
+      output += splitLine
+
+    "```#{output}```"
 
 exports.WhereAppFormatter  = WhereAppFormatter
 exports.WhereAppsFormatter  = WhereAppsFormatter
+exports.LatestFormatter  = LatestFormatter
