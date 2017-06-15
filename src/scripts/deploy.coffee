@@ -5,14 +5,18 @@
 #   GITLAB_URL
 #   GITLAB_TOKEN
 #   GITLAB_SNIPPETS_NAME
+#   GITLAB_DEPLOY_KEY
 #
 # Commands:
 #   hubot show deploy apps <app> - see what environments you can deploy app
 #   hubot deploy:version - show the script version and node/environment info
 #   hubot deploy <app>/<branch> to <env>/<roles> - deploys <app>'s <branch> to the <env> environment's <roles> servers
 #   hubot show deploy logs <app>/<branch> in <env> <limit> - Displays recent deployments for <app>'s <branch> in the <env> environment, default display 10
+#   hubot show deploy gitlab key <app> - Displays gitlab deploy key
+#
 #
 fs = require ("fs")
+path = require ("path")
 Q = require ("q")
 childProcess = require('child_process')
 
@@ -299,3 +303,31 @@ module.exports = (robot) ->
   # Useful for debugging
   robot.respond ///#{DeployPrefix}\:version$///i, id: "hubot-gitlab-deploy.version", (msg) ->
     msg.send "hubot-gitlab-deploy: v#{Version} hubot: v#{robot.version} node: #{process.version}"
+
+  ###########################################################################
+  # show deploy gitlab key <app>
+  #
+  # show gitlab deploy key
+  robot.respond ///show\s+#{DeployPrefix}\s+gitlab\s+key(?:\s+([-_\.0-9a-z]+)?)?$///i, id: "hubot-gitlab-deploy.gitlab-key", (msg) ->
+    name = msg.match[1]
+    deployKey = process.env.GITLAB_DEPLOY_KEY || ""
+    try
+      if name?
+        deployment = new Deployment(name)
+        unless deployment.isValidApp()
+          msg.reply "#{name}? Never heard of it."
+          return
+
+        if deployment.application.gitlab_deploy_key?
+          deployKey = deployment.application.gitlab_deploy_key
+
+      if not deployKey? || deployKey==""
+        deployKey = fs.readFileSync(path.resolve(process.env.HOME ||  process.env.USERPROFILE, ".ssh/gitlab_id_rsa.pub"),{encoding:"utf8"})
+    catch err
+      robot.logger.error "read gitlab deploy key failure. #{err}"
+
+    if not deployKey? || deployKey==""
+      msg.reply "No valid certificate was found gitlab deployment key."
+      return
+
+    msg.reply deployKey
