@@ -6,6 +6,7 @@
 #   GITLAB_TOKEN
 #   GITLAB_SNIPPETS_NAME
 #   GITLAB_DEPLOY_KEY
+#   SERVICE_DEPLOY_KEY
 #
 # Commands:
 #   hubot show deploy apps <app> - see what environments you can deploy app
@@ -13,7 +14,7 @@
 #   hubot deploy <app>/<branch> to <env>/<roles> - deploys <app>'s <branch> to the <env> environment's <roles> servers
 #   hubot show deploy logs <app>/<branch> in <env> <limit> - Displays recent deployments for <app>'s <branch> in the <env> environment, default display 10
 #   hubot show deploy gitlab key <app> - Displays gitlab deploy key
-#
+#   hubot show deploy service key <app> - Displays service deploy key
 #
 fs = require ("fs")
 path = require ("path")
@@ -325,6 +326,34 @@ module.exports = (robot) ->
         deployKey = fs.readFileSync(path.resolve(process.env.HOME ||  process.env.USERPROFILE, ".ssh/gitlab_id_rsa.pub"),{encoding:"utf8"})
     catch err
       robot.logger.error "read gitlab deploy key failure. #{err}"
+
+    if not deployKey? || deployKey==""
+      msg.reply "No valid certificate was found gitlab deployment key."
+      return
+
+    msg.reply deployKey
+
+  ###########################################################################
+  # show deploy service key <app>
+  #
+  # show service deploy key
+  robot.respond ///show\s+#{DeployPrefix}\s+service\s+key(?:\s+([-_\.0-9a-z]+)?)?$///i, id: "hubot-gitlab-deploy.gitlab-key", (msg) ->
+    name = msg.match[1]
+    deployKey = process.env.SERVICE_DEPLOY_KEY || ""
+    try
+      if name?
+        deployment = new Deployment(name)
+        unless deployment.isValidApp()
+          msg.reply "#{name}? Never heard of it."
+          return
+
+        if deployment.application.service_deploy_key?
+          deployKey = deployment.application.service_deploy_key
+
+      if not deployKey? || deployKey==""
+        deployKey = fs.readFileSync(path.resolve(process.env.HOME ||  process.env.USERPROFILE, ".ssh/id_rsa.pub"),{encoding:"utf8"})
+    catch err
+      robot.logger.error "read service deploy key failure. #{err}"
 
     if not deployKey? || deployKey==""
       msg.reply "No valid certificate was found gitlab deployment key."
