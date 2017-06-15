@@ -97,6 +97,14 @@ module.exports = (robot) ->
 
       completeDeploy = (status) ->
         robot.brain.remove(deployLockKey)
+        if workingDirectory?
+          try
+            childProcess.exec("rm -rf #{workingDirectory}", (error) ->
+              robot.logger.error("remove temp dir failure. #{error}")
+            )
+          catch error
+            robot.logger.error("remove temp dir failure. #{error}")
+
         try
           message = "#{msg.message.user.name}'s #{name} deployment of [#{projectInfo.path_with_namespace}:#{ref}](#{projectInfo.web_url}/tree/#{ref}) is #{if status then "done!" else "failed."}"
           api.writeDeployLog(command, stdout, stderr).then((info)->
