@@ -76,7 +76,7 @@ RUN set -xe \
     && apt-get install -y fabric --force-yes \
     && apt-get clean \
     && chmod +x /usr/local/bin/docker-entrypoint.sh \
-    && apt-get install \
+    && apt-get -y install \
        apt-transport-https \
        ca-certificates \
        curl \
@@ -88,7 +88,7 @@ RUN set -xe \
           $(lsb_release -cs) \
           stable" \
     && apt-get update \
-    && apt-get install docker-ce
+    && apt-get install -y docker-ce
 
 USER hubot
 
