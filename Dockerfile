@@ -75,7 +75,8 @@ RUN set -xe \
     && apt update \
     && apt-get install -y fabric --force-yes \
     && apt-get clean \
-    && chmod +x /usr/local/bin/docker-entrypoint.sh
+    && chmod +x /usr/local/bin/docker-entrypoint.sh \
+    && apt-get install docker-engine
 
 USER hubot
 
