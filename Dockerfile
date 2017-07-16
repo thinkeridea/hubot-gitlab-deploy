@@ -76,7 +76,7 @@ RUN set -xe \
     && apt-get install -y fabric --force-yes \
     && apt-get clean \
     && chmod +x /usr/local/bin/docker-entrypoint.sh \
-    && apt-get install \
+    && apt-get install -y \
             apt-transport-https \
             ca-certificates \
             curl \
