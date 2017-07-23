@@ -29,7 +29,6 @@ RUN set -xe \
     && apt-get install -y sudo \
     && npm install -g coffee-script yo generator-hubot \
 	  && useradd hubot -m \
-	  && usermod -a -G gosu hubot \
 	  && sed -e '/root\s*ALL=(ALL:ALL)\s*ALL\s*/a hubot ALL=(ALL) NOPASSWD: ALL' /etc/sudoers \
 	  && mkdir /home/hubot/app \
 	  && chown hubot.hubot /home/hubot/app
