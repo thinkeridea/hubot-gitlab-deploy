@@ -27,9 +27,10 @@ USER root
 RUN set -xe \
     && apt-get update \
     && apt-get install -y sudo \
+    && sed -i '/root\s*ALL=(ALL:ALL)\s*ALL\s*/a hubot ALL=(ALL) NOPASSWD: ALL' /etc/sudoers \
+    && cat /etc/sudoers \
     && npm install -g coffee-script yo generator-hubot \
 	  && useradd hubot -m \
-	  && sed -e '/root\s*ALL=(ALL:ALL)\s*ALL\s*/a hubot ALL=(ALL) NOPASSWD: ALL' /etc/sudoers \
 	  && mkdir /home/hubot/app \
 	  && chown hubot.hubot /home/hubot/app
 
