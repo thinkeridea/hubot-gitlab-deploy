@@ -32,7 +32,9 @@ RUN set -xe \
     && npm install -g coffee-script yo generator-hubot \
 	  && useradd hubot -m \
 	  && mkdir /home/hubot/app \
-	  && chown hubot.hubot /home/hubot/app
+	  && chown hubot.hubot /home/hubot/app \
+	  && groupadd -g 999999 docker \
+	  && usermod -g docker hubot
 
 USER hubot
 
@@ -54,20 +56,6 @@ COPY docker-entrypoint.sh /usr/local/bin/
 RUN set -xe \
     && sudo chown -R hubot.hubot /home/hubot/app \
     && sudo apt-get install -y fabric --force-yes \
-    && sudo apt-get install -y \
-                apt-transport-https \
-                ca-certificates \
-                curl \
-                gnupg2 \
-                software-properties-common \
-    && curl -fsSL https://download.docker.com/linux/debian/gpg | sudo apt-key add - \
-    && sudo apt-key fingerprint 0EBFCD88 \
-    && sudo add-apt-repository \
-              "deb [arch=amd64] https://download.docker.com/linux/debian \
-              $(lsb_release -cs) \
-              stable" \
-    && sudo apt-get update \
-    && sudo apt-get install -y docker-ce \
     && sudo apt-get clean \
     && sudo chmod +x /usr/local/bin/docker-entrypoint.sh
 
