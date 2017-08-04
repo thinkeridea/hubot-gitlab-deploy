@@ -34,7 +34,7 @@ RUN set -xe \
 	  && mkdir /home/hubot/app \
 	  && chown hubot.hubot /home/hubot/app \
 	  && groupadd -g 999999 docker \
-	  && usermod -g docker hubot
+	  && usermod -G docker hubot
 
 USER hubot
 
