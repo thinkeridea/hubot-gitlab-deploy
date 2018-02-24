@@ -280,6 +280,7 @@ module.exports = (robot) ->
         if res.length > step + step/2
           prefix += "{suffix}"
 
+        prefix += "\n"
         length = res.length-1
         for i in [0..length] by step
           c = length - (i+step)
