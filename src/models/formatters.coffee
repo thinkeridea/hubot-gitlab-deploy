@@ -18,7 +18,7 @@ class WhereAppFormatter
     output += Sprintf "%-15s | %-35s\n", "Users", allowed_users
     output += splitLine
 
-    "show applications for #{@deployment.name}\n```#{output}```"
+    "show applications for #{@deployment.name}\n```\n#{output}```"
 
 class WhereAppsFormatter
   constructor: (@applications) ->
@@ -32,7 +32,7 @@ class WhereAppsFormatter
       output += Sprintf "%-10s | %-25s | %-25s| %-25s\n", name, allowed_rooms, allowed_users, environments
       output += splitLine
 
-    "show applications\n```#{output}```"
+    "show applications\n```\n#{output}```"
 
 class LatestFormatter
   constructor: (@res) ->
@@ -48,7 +48,7 @@ class LatestFormatter
         "#{Timeago(log.create_date)} / #{TimeStamp("YYYY-MM-DD HH:mm:ss", log.create_date)}")
       output += splitLine
 
-    "```#{output}```"
+    "```\n#{output}```"
 
 exports.WhereAppFormatter  = WhereAppFormatter
 exports.WhereAppsFormatter  = WhereAppsFormatter
