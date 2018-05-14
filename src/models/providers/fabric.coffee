@@ -3,11 +3,15 @@ childProcess = require('child_process')
 ###########################################################################
 
 module.exports = (deployment, workingDirectory) ->
+  fabfilePath = deployment.application['fabfile'] || process.env['FABFILE_PATH']
+  fabfileParam = ""
+  if fabfilePath?
+    fabfileParam = " -f #{fabfilePath} "
   deferred = Q.defer()
   if deployment.hosts? && deployment.hosts isnt ""
-    deployCommand = "fab -H #{deployment.hosts} #{deployment.task}:branch_name=#{deployment.ref} --set=environment=#{deployment.env}"
+    deployCommand = "fab #{fabfileParam} -H #{deployment.hosts} #{deployment.task}:branch_name=#{deployment.ref} --set=environment=#{deployment.env}"
   else
-    deployCommand = "fab -R #{deployment.env} #{deployment.task}:branch_name=#{deployment.ref} --set=environment=#{deployment.env}"
+    deployCommand = "fab #{fabfileParam} -R #{deployment.env} #{deployment.task}:branch_name=#{deployment.ref} --set=environment=#{deployment.env}"
 
   console.log("Executing fabric: #{deployCommand}")
 
