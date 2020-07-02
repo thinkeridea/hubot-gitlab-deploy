@@ -91,7 +91,7 @@ module.exports = (robot) ->
             robot.adapter.customMessage({
               channel: msg.message.user.roomID,
               alias: "",
-              avatar: "",
+#              avatar: "",
               attachments: [{
                 text:content,
                 color:if status then "#6498CC" else "#c00",
